@@ -24,6 +24,36 @@ pipeline{
             )
             }
         }
+        stage('PUSH to JFROG') {
+            when {
+                expression { params.action == 'create' }
+            }
+            steps {
+                script {
+                    echo "Attempting to push artifacts to JFROG Artifactory"
+
+                    withCredentials([usernamePassword(
+                        credentialsId: "ARTIFACTORY",
+                        usernameVariable: "USER",
+                        passwordVariable: "PASS"
+                    )]) {
+                        // use the ARTIFACTORY_USER and ARTIFACTORY_PASSWORD variables
+                        echo "Username: $USER"
+                        echo "Password: $PASS"
+
+                        // Git Checkout
+                        git checkout branch: "main", url: "https://github.com/praveen1994dec/Java_app_3.0.git"
+
+                        // cURL command to push artifacts to Artifactory
+                        def curlCommand = """
+                            curl -u '$USER:$PASS' -T target/*.jar ${params.ArtifactoryURL}/artifactory/example-repo-local/
+                        """
+                        echo "Executing curl command: $curlCommand"
+                        sh curlCommand
+                    }
+                }
+            }
+        }
          stage('Unit Test maven'){
          
          when { expression {  params.action == 'create' } }
